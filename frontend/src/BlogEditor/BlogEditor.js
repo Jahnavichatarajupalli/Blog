@@ -6,7 +6,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-const apiUrl = 'http://localhost:5000';
+const apiUrl = process.env.REACT_APP_API_URL
 
 function debounce(func, wait) {
   let timeout;
