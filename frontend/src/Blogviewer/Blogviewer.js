@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import './Blogviewer.css';
 
-const apiUrl = 'http://localhost:5000';
+const apiUrl =  process.env.REACT_APP_API_URL
 
 const BlogViewer = () => {
   const { id } = useParams();
