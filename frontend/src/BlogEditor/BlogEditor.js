@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Editor } from '@tinymce/tinymce-react';
 import axios from 'axios';
 import './BlogEditor.css';
@@ -6,7 +6,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-const apiUrl = process.env.REACT_APP_API_URL
+const apiUrl = process.env.REACT_APP_API_URL;
 
 function debounce(func, wait) {
   let timeout;
@@ -26,6 +26,7 @@ const BlogEditor = () => {
     tags: [],
     status: 'draft',
   });
+
   const [tagInput, setTagInput] = useState('');
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
@@ -56,27 +57,33 @@ const BlogEditor = () => {
     }
   }, [id]);
 
-  const autoSave = useCallback(
-    debounce(async (blogData) => {
+  // Auto-save blog with debounce
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    const debouncedSave = debounce(async () => {
       if (
-        !blogData.title.trim() ||
-        !blogData.content.trim() ||
-        (blogData.title === lastAutoSavedData.current.title &&
-         blogData.content === lastAutoSavedData.current.content)
+        !blog.title.trim() ||
+        !blog.content.trim() ||
+        (blog.title === lastAutoSavedData.current.title &&
+         blog.content === lastAutoSavedData.current.content)
       ) {
         return;
       }
 
       try {
         setSaving(true);
-        const res = await axios.post(`${apiUrl}/api/blogs/save-draft`, blogData);
-        if (res.data._id) {
-          setBlog((prev) => ({ ...prev, _id: res.data._id }));
+        const response = await axios.post(`${apiUrl}/api/blogs/save-draft`, blog);
+        if (response.data._id) {
+          setBlog((prev) => ({ ...prev, _id: response.data._id }));
         }
         setLastSaved(new Date());
         lastAutoSavedData.current = {
-          title: blogData.title,
-          content: blogData.content,
+          title: blog.title,
+          content: blog.content,
         };
         toast.success('Draft auto-saved');
       } catch (err) {
@@ -85,17 +92,10 @@ const BlogEditor = () => {
       } finally {
         setSaving(false);
       }
-    }, 3000),
-    []
-  );
+    }, 3000);
 
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    autoSave(blog);
-  }, [blog.title, blog.content]);
+    debouncedSave();
+  }, [blog]); // ✅ Full blog object dependency
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -116,34 +116,34 @@ const BlogEditor = () => {
     setBlog((prev) => ({ ...prev, tags: tagList }));
   };
 
- const handlePublish = async () => {
-  if (!blog.title.trim() || !blog.content.trim()) {
-    alert('Please complete the draft first.');
-    return;
-  }
+  const handlePublish = async () => {
+    if (!blog.title.trim() || !blog.content.trim()) {
+      alert('Please complete the draft first.');
+      return;
+    }
 
-  try {
-    blog.status = 'published';
-    const res = await axios.post(`${apiUrl}/api/blogs/publish`, blog);
-    
-    setBlog({
-      title: '',
-      content: '',
-      tags: [],
-      status: 'draft',
-    });
-    setTagInput('');
+    try {
+      blog.status = 'published';
+      await axios.post(`${apiUrl}/api/blogs/publish`, blog);
 
-    toast.success('Blog published successfully!', {
-      onClose: () => navigate('/dashboard'),
-      autoClose: 2000, // 2 seconds toast display
-    });
-    
-  } catch (err) {
-    console.error('Publish error:', err);
-    toast.error('Failed to publish the blog');
-  }
-};
+      setBlog({
+        title: '',
+        content: '',
+        tags: [],
+        status: 'draft',
+      });
+      setTagInput('');
+
+      toast.success('Blog published successfully!', {
+        onClose: () => navigate('/dashboard'),
+        autoClose: 2000,
+      });
+
+    } catch (err) {
+      console.error('Publish error:', err);
+      toast.error('Failed to publish the blog');
+    }
+  };
 
   return (
     <div className="blog-editor">
@@ -202,3 +202,4 @@ const BlogEditor = () => {
 };
 
 export default BlogEditor;
+
