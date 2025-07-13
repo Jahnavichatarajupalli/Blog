@@ -4,7 +4,7 @@ import axios from 'axios';
 import './PublishedBlogs.css';
 import {useNavigate} from 'react-router-dom'
 
-const apiUrl = 'http://localhost:5000';
+const apiUrl =  process.env.REACT_APP_API_URL
 
 const PublishedBlogs = ({ onEdit }) => {
   const [blogs, setBlogs] = useState([]);
