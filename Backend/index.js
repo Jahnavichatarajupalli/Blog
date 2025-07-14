@@ -15,7 +15,7 @@ const blog=require("./routes/blogs")
 const app = express();
 
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: ['http://localhost:3000','https://blog-2tqt.vercel.app'],
   credentials: true
 }));
 
