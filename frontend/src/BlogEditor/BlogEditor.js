@@ -8,6 +8,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
+// Debounce utility
 function debounce(func, wait) {
   let timeout;
   return (...args) => {
@@ -32,6 +33,7 @@ const BlogEditor = () => {
   const [lastSaved, setLastSaved] = useState(null);
   const isFirstRender = useRef(true);
   const lastAutoSavedData = useRef({ title: '', content: '' });
+  const debouncedSaveRef = useRef(null);
 
   // Fetch blog by ID if editing
   useEffect(() => {
@@ -57,14 +59,9 @@ const BlogEditor = () => {
     }
   }, [id]);
 
-  // Auto-save blog with debounce
+  // Define debounced save once
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-
-    const debouncedSave = debounce(async () => {
+    debouncedSaveRef.current = debounce(async () => {
       if (
         !blog.title.trim() ||
         !blog.content.trim() ||
@@ -93,9 +90,18 @@ const BlogEditor = () => {
         setSaving(false);
       }
     }, 3000);
+  }, [blog]);
 
-    debouncedSave();
-  }, [blog]); // ✅ Full blog object dependency
+  // Trigger auto-save only on title/content change
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    if (debouncedSaveRef.current) {
+      debouncedSaveRef.current();
+    }
+  }, [blog.title, blog.content]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -138,7 +144,6 @@ const BlogEditor = () => {
         onClose: () => navigate('/dashboard'),
         autoClose: 2000,
       });
-
     } catch (err) {
       console.error('Publish error:', err);
       toast.error('Failed to publish the blog');
@@ -202,4 +207,5 @@ const BlogEditor = () => {
 };
 
 export default BlogEditor;
+
 
